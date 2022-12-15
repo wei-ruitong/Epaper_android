@@ -40,10 +40,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+//    TODO： 声明控件
     private Button convert_btn,update_btn,save_btn;
     private ImageButton imageButton;
     private static final String TAG = "MainActivity";
-    private ImageView imageView,imageView2,imageView3;
+    private ImageView imageView,imageView2,imageView3,imageView_cavas;
     private myMqtt mqtt;
     public static final int REQUEST_CODE_CHOOSE_IMAGE = 1;
     public static final int REQUEST_CODE_CROP_IMAGE = 2;
@@ -68,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     private void initComponent()
     {
+//        TODO :绑定控件
         convert_btn =findViewById((R.id.convert_btn));
         update_btn = findViewById(R.id.update_btn);
         save_btn = findViewById(R.id.save_btn);
@@ -75,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imageView =findViewById(R.id.imageview);
         imageView2 =findViewById(R.id.imageview2);
         imageView3 =findViewById(R.id.imageview3);
+        imageView_cavas = findViewById(R.id.cavas);
 
     }
     public void requestAllPower() {
