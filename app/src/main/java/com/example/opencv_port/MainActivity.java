@@ -8,21 +8,38 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.opencv_port.util.Mqtt.myMqtt;
 import com.example.opencv_port.util.pictureTools.EpaperPicture;
 import com.example.opencv_port.util.pictureTools.Bitmap2Hex;
+import com.example.opencv_port.util.pictureTools.MethodOfOpencv;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -38,20 +55,29 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Date;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener ,
+        View.OnTouchListener, SeekBar.OnSeekBarChangeListener {
 //    TODO： 声明控件
-    private Button convert_btn,update_btn,save_btn;
+    private Button convert_btn,update_btn,save_btn,clean_button,canvas_update,write_button;
+    private EditText editText;
+    private TextView textView;
     private ImageButton imageButton;
+    private RadioGroup radioGroup;
+    private SeekBar seekBar;
     private static final String TAG = "MainActivity";
-    private ImageView imageView,imageView2,imageView3,imageView_cavas;
+    private ImageView imageView,imageView2,imageView3,imageView_cavas,cavas_show;
     private myMqtt mqtt;
     public static final int REQUEST_CODE_CHOOSE_IMAGE = 1;
     public static final int REQUEST_CODE_CROP_IMAGE = 2;
     private Uri cropImageUri;
     private Mat imageMat;
-    private Bitmap image_gray,img_floyd,image_resize,image_result,image_rotary;
+    private Bitmap image_gray,img_floyd,image_resize,image_result,image_rotary,canvas_bitmap;
     private String strings;
+    private Paint paint;
+    private Canvas canvas;
+    private int startX, startY, endX, endY;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,10 +92,52 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         convert_btn.setOnClickListener(this);
         save_btn.setOnClickListener(this);
         imageButton.setOnClickListener(this);
+        clean_button.setOnClickListener(this);
+        canvas_update.setOnClickListener(this);
+        write_button.setOnClickListener(this);
+        canvas();
+        imageView_cavas.setOnTouchListener(this);
+        seekBar.setOnSeekBarChangeListener(this);
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                switch (checkedId){
+                    case R.id.red_radio:
+                        paint.setColor(Color.RED);
+                        break;
+                    case R.id.black_radio:
+                        paint.setColor(Color.BLACK);
+                        break;
+                    case R.id.yellow_radio:
+                        paint.setColor(Color.YELLOW);
+                        break;
+                }
+            }
+        });
+    }
+    private void canvas(){
+        canvas_bitmap =  Bitmap.createBitmap(700,700,Bitmap.Config.ARGB_8888);
+        canvas = new Canvas(canvas_bitmap);    // 创建一张画布,并图片放在画布上面
+        canvas.drawColor(Color.argb(100,255,255,255));   // 设置画布背景颜色为白色
+        paint = new Paint();
+        paint.setStrokeWidth(10);
+        paint.setAntiAlias(true);
+        paint.setColor(Color.BLACK);
+        canvas.drawBitmap(canvas_bitmap,new Matrix(),paint);  //把灰色背景画在画布上
+        imageView_cavas.setImageBitmap(canvas_bitmap);         // 把图片加载到ImageView上
+
     }
     private void initComponent()
     {
 //        TODO :绑定控件
+        cavas_show = findViewById(R.id.cavas_show);
+        editText = findViewById(R.id.edit);
+        write_button = findViewById(R.id.send);
+        canvas_update =findViewById(R.id.canvas_update);
+        clean_button = findViewById(R.id.clean);
+        textView =  findViewById(R.id.pen_width);
+        seekBar = findViewById(R.id.seekbar);
+        radioGroup = findViewById(R.id.radiogroup);
         convert_btn =findViewById((R.id.convert_btn));
         update_btn = findViewById(R.id.update_btn);
         save_btn = findViewById(R.id.save_btn);
@@ -80,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imageView_cavas = findViewById(R.id.cavas);
 
     }
+
     public void requestAllPower() {
 
         ActivityCompat.requestPermissions(this,
@@ -93,6 +162,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()){
+            case R.id.send:
+                String s1 = editText.getText().toString();
+                Paint paint = new Paint();
+                Typeface font = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
+                paint.setTextSize(90);
+                paint.setTypeface(font);
+                canvas.drawText(s1,50,300,paint);
+                paint.setTextSize(50);
+                canvas.drawText(new Date().toLocaleString(),50,650,paint);
+                canvas.drawBitmap(canvas_bitmap,new Matrix(),paint);
+                imageView_cavas.setImageBitmap(canvas_bitmap);
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.toggleSoftInput(0, InputMethodManager.HIDE_NOT_ALWAYS);
+
+                break;
+            case R.id.canvas_update:
+                Bitmap bitmap = MethodOfOpencv.rotatePicture(MethodOfOpencv.resizePicture(canvas_bitmap,200,200),90);
+                Bitmap indexedImage = EpaperPicture.createIndexedImage(bitmap, false, 200, 200, 0);
+                String s = Bitmap2Hex.ConvertBitmap2HexArray(indexedImage);
+                mqtt.sendMsg(s,"EPAPER");
+                cavas_show.setImageBitmap(MethodOfOpencv.rotatePicture(indexedImage,-90));
+                break;
+            case R.id.clean:
+                canvas_bitmap =  Bitmap.createBitmap(700,700,Bitmap.Config.ARGB_8888);
+                canvas = new Canvas(canvas_bitmap);    // 创建一张画布,并图片放在画布上面
+                canvas.drawColor(Color.argb(100,255,255,255));   // 设置画布背景颜色为白色
+                paint = new Paint();
+                paint.setStrokeWidth(10);
+                paint.setAntiAlias(true);
+                paint.setColor(Color.BLACK);
+                canvas.drawBitmap(canvas_bitmap,new Matrix(),paint);  //把灰色背景画在画布上
+                imageView_cavas.setImageBitmap(canvas_bitmap);
+                break;
             case R.id.save_btn:
                    saveBitmap(this,img_floyd);
                    Toast.makeText(this,"图片保存成功！",Toast.LENGTH_SHORT).show();
@@ -106,26 +208,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 break;
             case R.id.update_btn:
-//                StringBuffer stringBuffer = new StringBuffer();
-//                for (int i=0;i<5000;i++){
-//                    stringBuffer.append(strings);
-//                    stringBuffer.append(",");
-//                }
+
                 mqtt.sendMsg(strings,"EPAPER");
                 break;
             case R.id.convert_btn:
                 save_btn.setEnabled(true);
 //                显示灰度图像
-                imageView.setImageBitmap(image_gray);
+                imageView.setImageBitmap(MethodOfOpencv.rotatePicture(image_gray,-90));
 //                显示黑白抖动图像
-                img_floyd = EpaperPicture.createIndexedImage(image_resize,false,200,200,0);
-                imageView2.setImageBitmap(img_floyd);
+                img_floyd = EpaperPicture.createIndexedImage(image_rotary,false,200,200,0);
+                imageView2.setImageBitmap(MethodOfOpencv.rotatePicture(img_floyd,-90));
 //                显示黑白红三色颜色抖动图像
-                Bitmap bb = EpaperPicture.createIndexedImage(image_resize,false,200,200,1);
-                imageView3.setImageBitmap(bb);
-                //                TODO ：将图片转化为1维数组
-                image_result = EpaperPicture.createIndexedImage(image_rotary,false,200,200,0);
-                strings = Bitmap2Hex.ConvertBitmap2HexArray(image_result);
+                Bitmap three_color = EpaperPicture.createIndexedImage(image_resize,false,200,200,1);
+                imageView3.setImageBitmap(three_color);
+                strings = Bitmap2Hex.ConvertBitmap2HexArray(img_floyd);
 //                Log.i("HEX",strings);
                 break;
         }
@@ -192,30 +288,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (resultCode == RESULT_OK) {
                         try {
                             Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(cropImageUri));
-                            // 将裁剪后的照片显示出来
+                            //                           将裁剪后的照片显示出来
                             imageButton.setImageBitmap(bitmap);
-                            Mat mat_src = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC4);
-                            Utils.bitmapToMat(bitmap, mat_src);
-                            Mat mat_result = new Mat();
-//                          更改图片尺寸
-                            Imgproc.resize(mat_src,mat_result, new Size(200,200));
-                            image_resize=Bitmap.createBitmap(mat_result.width(), mat_result.height(), Bitmap.Config.ARGB_8888);
-                            Utils.matToBitmap(mat_result, image_resize);
-//                            将图片旋转90度
-                            Mat image_rot = Imgproc.getRotationMatrix2D(new Point(mat_result.width() / 2-0.5, mat_result.height() / 2-0.5), 90, 1);
-                            Mat mat_result2 = new Mat();
-                            Imgproc.warpAffine(mat_result,mat_result2,image_rot,mat_result.size());
-                            image_rotary=Bitmap.createBitmap(mat_result.width(), mat_result.height(), Bitmap.Config.ARGB_8888);
-                            Utils.matToBitmap(mat_result2, image_rotary);
-//                            图片镜像
-//                            Mat mat_result3 = new Mat();
-//                            Imgproc.filter2D(mat_result2,mat_result3,1,);
-//                           转化成灰度图片
+//                           更改图片尺寸
+                             image_resize = MethodOfOpencv.resizePicture(bitmap,200,200);
 
-                            Mat mat_gray = new Mat(mat_result.width(),mat_result.height(), CvType.CV_8UC1);
-                            Imgproc.cvtColor(mat_result, mat_gray, Imgproc.COLOR_BGRA2GRAY);
-                            image_gray = Bitmap.createBitmap(mat_result.width(), mat_result.height(), Bitmap.Config.ARGB_8888);
-                            Utils.matToBitmap(mat_gray, image_gray);
+//                           将图片旋转90度
+                            image_rotary = MethodOfOpencv.rotatePicture(image_resize,90);
+//                           转化成灰度图片
+                            image_gray =MethodOfOpencv.convert2GrayPicture(image_rotary);
                         } catch (FileNotFoundException e) {
                             e.printStackTrace();
                         }
@@ -297,4 +378,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                Log.i("MyPaintToolsActivity", "ACTION_DOWN");
+                // 获取鼠标按下时的坐标
+                startX = (int) (event.getX() );
+                startY = (int) (event.getY());
+                break;
+            case MotionEvent.ACTION_MOVE:
+                Log.i("MyPaintToolsActivity", "ACTION_MOVE");
+                // 获取鼠标移动后的坐标
+                endX = (int) (event.getX() );
+                endY = (int) (event.getY() );
+                //在开始和结束之间画一条直线
+                canvas.drawLine(startX, startY, endX, endY, paint);
+                // 实时更新开始坐标
+                startX = (int) (event.getX() );
+                startY = (int) (event.getY());
+                // 更新ImageView上的画布图片
+                imageView_cavas.setImageBitmap(canvas_bitmap);
+                break;
+            case MotionEvent.ACTION_UP:
+                Log.i("MyPaintToolsActivity", "ACTION_UP");
+                break;
+        }
+        imageView_cavas.invalidate();
+        return true;
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        paint.setStrokeWidth(progress);
+        textView.setText("画笔粗度： "+progress);
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+
+    }
 }

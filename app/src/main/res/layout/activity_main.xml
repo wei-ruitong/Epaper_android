@@ -19,7 +19,7 @@
             android:id="@+id/imageButton"
             android:layout_width="0dp"
             android:layout_weight="1"
-            android:src="@drawable/b"
+            android:src="@drawable/conv"
             android:layout_height="150dp"
             />
         <ImageView
@@ -49,7 +49,8 @@
     </LinearLayout>
 <LinearLayout
 
-    android:layout_margin="8dp"
+    android:layout_marginLeft="8dp"
+    android:layout_marginRight="8dp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal">
@@ -81,11 +82,24 @@
         android:enabled="false"
         />
 </LinearLayout>
-<ImageView
-    android:id="@+id/cavas"
-    android:layout_width="match_parent"
-    android:layout_height="200dp"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <ImageView
+
+            android:background="#e69966"
+            android:id="@+id/cavas"
+            android:layout_width="700px"
+            android:layout_height="700px"/>
+        <ImageView
+            android:id="@+id/cavas_show"
+            android:layout_width="700px"
+            android:layout_height="700px"/>
+    </LinearLayout>
+
     <RadioGroup
+        android:id="@+id/radiogroup"
         android:layout_marginLeft="25dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -96,6 +110,7 @@
     android:layout_weight="1"
     android:layout_height="wrap_content"
     android:text="红色"
+
     android:textColor="#ff0000"/>
 <RadioButton
     android:id="@+id/yellow_radio"
@@ -108,12 +123,14 @@
     android:id="@+id/black_radio"
     android:layout_width="0dp"
     android:layout_weight="1"
+    android:checked="true"
     android:layout_height="wrap_content"
     android:text="黑色"
     android:textColor="#000000"/>
     </RadioGroup>
     <LinearLayout
-        android:layout_margin="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
@@ -131,13 +148,50 @@
             android:layout_height="wrap_content"
             android:text="擦除"/>
         <Button
-            android:id="@+id/update"
+            android:id="@+id/canvas_update"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_marginLeft="8dp"
             android:layout_height="wrap_content"
             android:text="更新"/>
     </LinearLayout>
+    <SeekBar
+        android:id="@+id/seekbar"
+        android:layout_margin="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:progress="10"
+        android:min="1"
+        android:max="30"/>
+    <TextView
+        android:id="@+id/pen_width"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="画笔粗细: 10"
+        android:textSize="20sp"
+        android:gravity="center"/>
+    <LinearLayout
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <EditText
+            android:id="@+id/edit"
+            android:layout_width="0dp"
+            android:layout_weight="4"
+            android:hint="请输入信息"
+            android:gravity="center"
+            android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/send"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="绘制"/>
+
+    </LinearLayout>
+
 </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
