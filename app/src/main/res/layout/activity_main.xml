@@ -69,7 +69,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:enabled="false"
-        android:text="保存"
+        android:text="更新4.2寸屏"
 
         />
     <Button
@@ -78,7 +78,7 @@
         android:layout_width="0dp"
         android:layout_weight="1"
         android:layout_height="wrap_content"
-        android:text="更新墨水屏"
+        android:text="更新1.54寸屏"
         android:enabled="false"
         />
 </LinearLayout>
@@ -142,18 +142,18 @@
             android:layout_marginRight="8dp"
             android:text="清屏"/>
         <Button
-            android:id="@+id/eraser"
+            android:id="@+id/update_42"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="擦除"/>
+            android:text="更新4.2寸屏"/>
         <Button
             android:id="@+id/canvas_update"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_marginLeft="8dp"
             android:layout_height="wrap_content"
-            android:text="更新"/>
+            android:text="更新1.54寸屏"/>
     </LinearLayout>
     <SeekBar
         android:id="@+id/seekbar"

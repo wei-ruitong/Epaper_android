@@ -14,13 +14,9 @@ import java.io.IOException;
 public class EpaperPicture {
     private static int srcW, srcH; // Width and height of source image
     private static int dstW, dstH; // Width and height of destination image
-
     private static Bitmap srcBmp; // Bitmap of source image
     private static Bitmap dstBmp; // Bitmap of destination image
-
     private static int[] curPal; // Current palette
-
-
     private static int[][] palettes = new int[][] // Palettes
             {
                     new int[] { Color.BLACK, Color.WHITE                        }, //1黑白

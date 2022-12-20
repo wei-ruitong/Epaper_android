@@ -12,8 +12,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
@@ -23,19 +21,17 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.opencv_port.util.Message.Message;
 import com.example.opencv_port.util.Mqtt.myMqtt;
 import com.example.opencv_port.util.pictureTools.EpaperPicture;
 import com.example.opencv_port.util.pictureTools.Bitmap2Hex;
@@ -44,12 +40,7 @@ import com.example.opencv_port.util.pictureTools.MethodOfOpencv;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -60,7 +51,7 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener ,
         View.OnTouchListener, SeekBar.OnSeekBarChangeListener {
 //    TODO： 声明控件
-    private Button convert_btn,update_btn,save_btn,clean_button,canvas_update,write_button;
+    private Button convert_btn,update_btn,save_btn,clean_button,canvas_update,write_button,update42_button;
     private EditText editText;
     private TextView textView;
     private ImageButton imageButton;
@@ -68,12 +59,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private SeekBar seekBar;
     private static final String TAG = "MainActivity";
     private ImageView imageView,imageView2,imageView3,imageView_cavas,cavas_show;
-    private myMqtt mqtt;
+    public static myMqtt mqtt;
     public static final int REQUEST_CODE_CHOOSE_IMAGE = 1;
     public static final int REQUEST_CODE_CROP_IMAGE = 2;
     private Uri cropImageUri;
     private Mat imageMat;
-    private Bitmap image_gray,img_floyd,image_resize,image_result,image_rotary,canvas_bitmap;
+    private Bitmap image_gray,img_floyd,image_resize,image_result,image_rotary,canvas_bitmap,origin_bitmap;
     private String strings;
     private Paint paint;
     private Canvas canvas;
@@ -95,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         clean_button.setOnClickListener(this);
         canvas_update.setOnClickListener(this);
         write_button.setOnClickListener(this);
+        update42_button.setOnClickListener(this);
         canvas();
         imageView_cavas.setOnTouchListener(this);
         seekBar.setOnSeekBarChangeListener(this);
@@ -130,6 +122,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void initComponent()
     {
 //        TODO :绑定控件
+        update42_button = findViewById(R.id.update_42);
         cavas_show = findViewById(R.id.cavas_show);
         editText = findViewById(R.id.edit);
         write_button = findViewById(R.id.send);
@@ -162,6 +155,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()){
+//            TODO :按键点击事件
+            case R.id.save_btn:
+//                imageView3.setImageBitmap(origin_bitmap);
+                Bitmap bitmap1 = MethodOfOpencv.resizePicture(origin_bitmap,400,300);
+//                imageView3.setImageBitmap(bitmap1);
+                Bitmap indexedImage1 = EpaperPicture.createIndexedImage(bitmap1, false, 400, 300, 0);
+                imageView3.setImageBitmap(indexedImage1);
+                String s = Bitmap2Hex.ConvertBitmap2HexBlackArray(indexedImage1);
+                Message.sendMessage(s);
+//                String s = Bitmap2Hex_Red.ConvertBitmap2HexRedArray(indexedImage1);
+
+//                mqtt.sendMsg("x","EPAPER");
+//                Log.i("LEN",String.valueOf(s.length()));
+//                mqtt.sendMsg(s,"EPAPER");
+
+                break;
             case R.id.send:
                 String s1 = editText.getText().toString();
                 Paint paint = new Paint();
@@ -178,11 +187,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 break;
             case R.id.canvas_update:
-                Bitmap bitmap = MethodOfOpencv.rotatePicture(MethodOfOpencv.resizePicture(canvas_bitmap,200,200),90);
-                Bitmap indexedImage = EpaperPicture.createIndexedImage(bitmap, false, 200, 200, 0);
-                String s = Bitmap2Hex.ConvertBitmap2HexArray(indexedImage);
-                mqtt.sendMsg(s,"EPAPER");
-                cavas_show.setImageBitmap(MethodOfOpencv.rotatePicture(indexedImage,-90));
+                Bitmap bitmap2 = MethodOfOpencv.resizePicture(canvas_bitmap,200,200);
+                Bitmap indexedImage = EpaperPicture.createIndexedImage(bitmap2, false, 200, 200, 0);
+                String s2 = Bitmap2Hex.ConvertBitmap2HexBlackArray(indexedImage);
+                mqtt.sendMsg(s2,"EPAPER");
+                cavas_show.setImageBitmap(indexedImage);
                 break;
             case R.id.clean:
                 canvas_bitmap =  Bitmap.createBitmap(700,700,Bitmap.Config.ARGB_8888);
@@ -195,9 +204,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 canvas.drawBitmap(canvas_bitmap,new Matrix(),paint);  //把灰色背景画在画布上
                 imageView_cavas.setImageBitmap(canvas_bitmap);
                 break;
-            case R.id.save_btn:
-                   saveBitmap(this,img_floyd);
-                   Toast.makeText(this,"图片保存成功！",Toast.LENGTH_SHORT).show();
+            case R.id.update_42:
+                Bitmap bitmap3 = MethodOfOpencv.resizePicture(canvas_bitmap,400,300);
+                Bitmap indexedImage2 = EpaperPicture.createIndexedImage(bitmap3, false, 400, 300, 0);
+                String s3 = Bitmap2Hex.ConvertBitmap2HexBlackArray(indexedImage2);
+                Message.sendMessage(s3);
+                cavas_show.setImageBitmap(indexedImage2);
+//                   saveBitmap(this,img_floyd);
+//                   Toast.makeText(this,"图片保存成功！",Toast.LENGTH_SHORT).show();
                 break;
             case R.id.imageButton:
                 convert_btn.setEnabled(true);
@@ -205,7 +219,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Intent intent = new Intent(Intent.ACTION_PICK, null);
                 intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
                 startActivityForResult(intent, REQUEST_CODE_CHOOSE_IMAGE);
-
                 break;
             case R.id.update_btn:
 
@@ -214,14 +227,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.convert_btn:
                 save_btn.setEnabled(true);
 //                显示灰度图像
-                imageView.setImageBitmap(MethodOfOpencv.rotatePicture(image_gray,-90));
+                  imageView.setImageBitmap(image_gray);
 //                显示黑白抖动图像
-                img_floyd = EpaperPicture.createIndexedImage(image_rotary,false,200,200,0);
-                imageView2.setImageBitmap(MethodOfOpencv.rotatePicture(img_floyd,-90));
+                  img_floyd = EpaperPicture.createIndexedImage(image_resize,false,200,200,0);
+                  imageView2.setImageBitmap(img_floyd);
 //                显示黑白红三色颜色抖动图像
                 Bitmap three_color = EpaperPicture.createIndexedImage(image_resize,false,200,200,1);
                 imageView3.setImageBitmap(three_color);
-                strings = Bitmap2Hex.ConvertBitmap2HexArray(img_floyd);
+                strings = Bitmap2Hex.ConvertBitmap2HexBlackArray(img_floyd);
 //                Log.i("HEX",strings);
                 break;
         }
@@ -287,16 +300,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 case REQUEST_CODE_CROP_IMAGE:
                     if (resultCode == RESULT_OK) {
                         try {
-                            Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(cropImageUri));
-                            //                           将裁剪后的照片显示出来
-                            imageButton.setImageBitmap(bitmap);
+                             origin_bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(cropImageUri));
+//                           将裁剪后的照片显示出来
+                             imageButton.setImageBitmap(origin_bitmap);
 //                           更改图片尺寸
-                             image_resize = MethodOfOpencv.resizePicture(bitmap,200,200);
-
+                             image_resize = MethodOfOpencv.resizePicture(origin_bitmap,200,200);
 //                           将图片旋转90度
-                            image_rotary = MethodOfOpencv.rotatePicture(image_resize,90);
+//                             image_rotary = MethodOfOpencv.rotatePicture(image_resize,90);
 //                           转化成灰度图片
-                            image_gray =MethodOfOpencv.convert2GrayPicture(image_rotary);
+                             image_gray =MethodOfOpencv.convert2GrayPicture(image_resize);
                         } catch (FileNotFoundException e) {
                             e.printStackTrace();
                         }
