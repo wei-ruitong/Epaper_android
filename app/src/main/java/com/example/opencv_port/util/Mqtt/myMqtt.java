@@ -18,10 +18,10 @@ import java.util.concurrent.Executors;
 
 public class myMqtt {
     private static String TAG = "myMqtt";
-    private static String userName = "xxxxxxx"; //非必须
-    private static String password = "xxxxxxx"; //非必须
+    private static String userName = "xxxxxxx"; 
+    private static String password = "xxxxxxx"; 
     private static String clientId = "709603626";
-    private static String HOST = "tcp://183.230.40.39:6002"; //本地ipv4
+    private static String HOST = "tcp://183.230.40.39:6002"; 
     private static MqttConnectOptions options;
     private static MqttClient client;
     private static final int QOS0 = 0;//只发送一次 可能会丢失
